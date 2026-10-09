@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Top Up Zone - Admin Dashboard</title>
+
+    <link
+        rel="stylesheet"
+        href="admin.css"
+    >
+
+    <style>
+
+        #adminAuthOverlay {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            background: #080808;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-box {
+            width: 100%;
+            max-width: 430px;
+            background: #101010;
+            border: 1px solid #292929;
+            border-top: 3px solid #ff2b3d;
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 20px 70px rgba(0, 0, 0, 0.7);
+        }
+
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .auth-logo h1 {
+            color: #ffffff;
+            font-size: 27px;
+            margin-bottom: 6px;
+        }
+
+        .auth-logo p {
+            color: #777777;
+            font-size: 13px;
+        }
+
+        .auth-title {
+            color: #ffffff;
+            font-size: 20px;
+            margin-bottom: 18px;
+        }
+
+        .auth-input {
+            width: 100%;
+            box-sizing: border-box;
+            background: #090909;
+            color: #ffffff;
+            border: 1px solid #343434;
+            border-radius: 9px;
+            padding: 13px;
+            margin-bottom: 12px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .auth-input:focus {
+            border-color: #ff2b3d;
+            box-shadow: 0 0 0 2px rgba(255, 43, 61, 0.08);
+        }
+
+        .auth-button {
+            width: 100%;
+            border: none;
+            background: #ff2b3d;
+            color: #ffffff;
+            padding: 13px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 800;
+            margin-top: 5px;
+        }
+
+        .auth-button:hover {
+            background: #e51f31;
+        }
+
+        .auth-message {
+            display: none;
+            margin-top: 13px;
+            padding: 11px;
+            border-radius: 8px;
+            background: #1a0b0d;
+            border: 1px solid #4b171d;
+            color: #ff6570;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .auth-message.show {
+            display: block;
+        }
+
+        .auth-info {
+            color: #888888;
+            font-size: 12px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .qr-wrapper {
+            display: none;
+            text-align: center;
+            margin-bottom: 18px;
+        }
+
+        .qr-wrapper.show {
+            display: block;
+        }
+
+        .qr-wrapper img {
+            width: 210px;
+            max-width: 100%;
+            background: #ffffff;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .secret-key {
+            margin-top: 12px;
+            padding: 10px;
+            background: #090909;
+            border: 1px solid #292929;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 12px;
+            word-break: break-all;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* =========================================
+           CHANGE PASSWORD
+        ========================================= */
+
+        #changePasswordModal {
+            position: fixed;
+            inset: 0;
+            z-index: 999998;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.78);
+        }
+
+        #changePasswordModal.show {
+            display: flex;
+        }
+
+        .change-password-box {
+            width: 100%;
+            max-width: 430px;
+            background: #101010;
+            border: 1px solid #292929;
+            border-top: 3px solid #ff2b3d;
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 20px 70px rgba(0, 0, 0, 0.8);
+        }
+
+        .change-password-box h2 {
+            color: #ffffff;
+            margin: 0 0 8px;
+            font-size: 21px;
+        }
+
+        .change-password-box p {
+            color: #888888;
+            font-size: 13px;
+            margin: 0 0 18px;
+        }
+
+        #changePasswordMessage {
+            display: none;
+            padding: 11px;
+            border-radius: 8px;
+            margin-bottom: 13px;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        #changePasswordMessage.show {
+            display: block;
+        }
+
+        #changePasswordMessage.success {
+            color: #6dff9b;
+            background: #091a0f;
+            border: 1px solid #174d2b;
+        }
+
+        #changePasswordMessage.error {
+            color: #ff6570;
+            background: #1a0b0d;
+            border: 1px solid #4b171d;
+        }
+
+        .change-password-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .change-password-actions button {
+            flex: 1;
+            border: none;
+            padding: 12px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        #closeChangePasswordBtn {
+            background: #292929;
+            color: #ffffff;
+        }
+
+        #saveNewPasswordBtn {
+            background: #ff2b3d;
+            color: #ffffff;
+        }
+
+        #saveNewPasswordBtn:hover {
+            background: #e51f31;
+        }
+
+        @media (max-width: 500px) {
+
+            .auth-box,
+            .change-password-box {
+                padding: 22px;
+            }
+
+            .change-password-actions {
+                flex-direction: column;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <!-- =========================================
+         ADMIN LOGIN
+    ========================================= -->
+
+    <div id="adminAuthOverlay">
+
+        <div class="auth-box">
+
+            <div class="auth-logo">
+
+                <h1>Top Up Zone</h1>
+
+                <p>
+                    Admin Secure Login
+                </p>
+
+            </div>
+
+
+            <!-- LOGIN -->
+
+            <div id="loginStep">
+
+                <div class="auth-title">
+                    Admin Login
+                </div>
+
+                <input
+                    type="text"
+                    id="adminUsername"
+                    class="auth-input"
+                    placeholder="Username"
+                    autocomplete="username"
+                >
+
+                <input
+                    type="password"
+                    id="adminPassword"
+                    class="auth-input"
+                    placeholder="Password"
+                    autocomplete="current-password"
+                >
+
+                <button
+                    id="loginBtn"
+                    class="auth-button"
+                    type="button"
+                >
+                    Login
+                </button>
+
+            </div>
+
+
+            <!-- GOOGLE AUTHENTICATOR SETUP -->
+
+            <div
+                id="setupStep"
+                class="hidden"
+            >
+
+                <div class="auth-title">
+                    Setup Google Authenticator
+                </div>
+
+                <div class="auth-info">
+                    Open Google Authenticator on your phone and scan the QR code below.
+                    Then enter the 6-digit code generated by the app.
+                </div>
+
+                <div
+                    id="qrWrapper"
+                    class="qr-wrapper"
+                >
+
+                    <img
+                        id="authQr"
+                        src=""
+                        alt="Google Authenticator QR"
+                    >
+
+                    <div
+                        id="secretKey"
+                        class="secret-key"
+                    ></div>
+
+                </div>
+
+                <input
+                    type="text"
+                    id="setupCode"
+                    class="auth-input"
+                    placeholder="Enter 6-digit code"
+                    inputmode="numeric"
+                    maxlength="6"
+                    autocomplete="one-time-code"
+                >
+
+                <button
+                    id="setupVerifyBtn"
+                    class="auth-button"
+                    type="button"
+                >
+                    Verify & Enable 2FA
+                </button>
+
+            </div>
+
+
+            <!-- NORMAL 2FA -->
+
+            <div
+                id="twoFactorStep"
+                class="hidden"
+            >
+
+                <div class="auth-title">
+                    Google Authenticator
+                </div>
+
+                <div class="auth-info">
+                    Open Google Authenticator and enter the current 6-digit verification code.
+                </div>
+
+                <input
+                    type="text"
+                    id="twoFactorCode"
+                    class="auth-input"
+                    placeholder="6-digit verification code"
+                    inputmode="numeric"
+                    maxlength="6"
+                    autocomplete="one-time-code"
+                >
+
+                <button
+                    id="twoFactorVerifyBtn"
+                    class="auth-button"
+                    type="button"
+                >
+                    Verify Code
+                </button>
+
+            </div>
+
+
+            <div
+                id="authMessage"
+                class="auth-message"
+            ></div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================
+         ADMIN DASHBOARD
+    ========================================= -->
+
+    <div
+        id="adminDashboard"
+        style="display:none;"
+    >
+
+        <header class="admin-header">
+
+            <div>
+
+                <h1>
+                    Top Up Zone
+                </h1>
+
+                <p>
+                    Admin Dashboard
+                </p>
+
+            </div>
+
+            <div class="admin-status">
+                ● Admin Panel
+            </div>
+
+        </header>
+
+
+        <main class="admin-container">
+
+
+            <!-- STATS -->
+
+            <section class="stats-grid">
+
+                <div class="stat-card">
+                    <span>Total Orders</span>
+                    <strong id="totalOrders">0</strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>Pending</span>
+                    <strong id="pendingOrders">0</strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>Successful</span>
+                    <strong id="successfulOrders">0</strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>Cancelled</span>
+                    <strong id="cancelledOrders">0</strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>Total Sales</span>
+                    <strong id="totalSales">Rs.0</strong>
+                </div>
+
+            </section>
+
+
+            <!-- PACKAGE PRICES -->
+
+            <section class="admin-section">
+
+                <div class="section-header">
+
+                    <div>
+
+                        <h2>
+                            Package Prices
+                        </h2>
+
+                        <p>
+                            Change customer package prices
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div
+                    id="packageList"
+                    class="package-list"
+                >
+
+                    <div class="loading">
+                        Loading packages...
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ORDERS -->
+
+            <section class="admin-section">
+
+                <div class="section-header">
+
+                    <div>
+
+                        <h2>
+                            Orders
+                        </h2>
+
+                        <p>
+                            View customer orders and payment screenshots
+                        </p>
+
+                    </div>
+
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+
+                        <button
+                            id="changePasswordBtn"
+                            class="refresh-btn"
+                            type="button"
+                        >
+                            🔐 Change Password
+                        </button>
+
+                        <button
+                            id="refreshOrdersBtn"
+                            class="refresh-btn"
+                            type="button"
+                        >
+                            🔄 Refresh
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <div
+                    id="ordersContainer"
+                    class="orders-container"
+                >
+
+                    <div class="loading">
+                        Loading orders...
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+
+        <!-- =========================================
+             SCREENSHOT MODAL
+        ========================================= -->
+
+        <div
+            id="screenshotModal"
+            class="screenshot-modal"
+        >
+
+            <div class="screenshot-box">
+
+                <div class="screenshot-header">
+
+                    <h2>
+                        Payment Screenshot
+                    </h2>
+
+                    <button
+                        id="closeScreenshotBtn"
+                        class="close-screenshot"
+                        type="button"
+                    >
+                        ×
+                    </button>
+
+                </div>
+
+                <div
+                    id="screenshotInfo"
+                    class="screenshot-info"
+                ></div>
+
+                <div class="screenshot-image-wrapper">
+
+                    <img
+                        id="screenshotImage"
+                        src=""
+                        alt="Payment Screenshot"
+                    >
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================================
+             CHANGE PASSWORD MODAL
+        ========================================= -->
+
+        <div
+            id="changePasswordModal"
+        >
+
+            <div class="change-password-box">
+
+                <h2>
+                    🔐 Change Admin Password
+                </h2>
+
+                <p>
+                    Change the password used for Admin Login.
+                </p>
+
+                <div
+                    id="changePasswordMessage"
+                ></div>
+
+                <input
+                    type="password"
+                    id="currentAdminPassword"
+                    class="auth-input"
+                    placeholder="Current Password"
+                    autocomplete="current-password"
+                >
+
+                <input
+                    type="password"
+                    id="newAdminPassword"
+                    class="auth-input"
+                    placeholder="New Password"
+                    autocomplete="new-password"
+                >
+
+                <input
+                    type="password"
+                    id="confirmAdminPassword"
+                    class="auth-input"
+                    placeholder="Confirm New Password"
+                    autocomplete="new-password"
+                >
+
+                <div class="change-password-actions">
+
+                    <button
+                        id="closeChangePasswordBtn"
+                        type="button"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        id="saveNewPasswordBtn"
+                        type="button"
+                    >
+                        Change Password
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script src="admin.js"></script>
+
+</body>
+
+</html>

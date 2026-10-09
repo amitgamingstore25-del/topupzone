@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>My Orders - Top Up Zone</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #0f1115;
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .back {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: white;
+            text-decoration: none;
+            background: #2d3139;
+            padding: 10px 15px;
+            border-radius: 7px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .refresh,
+        .clear-history {
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .refresh {
+            background: #ff4757;
+        }
+
+        .clear-history {
+            background: #2d3139;
+        }
+
+        .order {
+            background: #1a1d24;
+            border: 1px solid #2d3139;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .order-id {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #5eead4;
+        }
+
+        .order-info {
+            color: #aaa;
+            line-height: 1.8;
+        }
+
+        .items {
+            margin-bottom: 8px;
+        }
+
+        .item {
+            background: #111318;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 8px;
+        }
+
+        .status {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 7px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .pending {
+            background: #5a4300;
+            color: #ffd43b;
+        }
+
+        .successful {
+            background: #063d21;
+            color: #35e88a;
+        }
+
+        .cancelled {
+            background: #4b1111;
+            color: #ff6b6b;
+        }
+
+        .empty {
+            text-align: center;
+            color: #aaa;
+            padding: 40px;
+            background: #1a1d24;
+            border-radius: 12px;
+        }
+
+        .loading {
+            text-align: center;
+            color: #aaa;
+            padding: 30px;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <a
+        href="index.html"
+        class="back"
+    >
+        ← Back to Shop
+    </a>
+
+    <h1>
+        My Order History
+    </h1>
+
+    <div class="actions">
+
+        <button
+            class="refresh"
+            onclick="loadOrders()"
+        >
+            Refresh Orders
+        </button>
+
+        <button
+            class="clear-history"
+            onclick="clearOrderHistory()"
+        >
+            Clear History
+        </button>
+
+    </div>
+
+    <div id="orders">
+
+        <div class="loading">
+            Loading orders...
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+const API =
+    "http://localhost:5000";
+
+
+// =====================================
+// ESCAPE HTML
+// =====================================
+
+function escapeHtml(text) {
+
+    return String(text ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+
+}
+
+
+// =====================================
+// GET LOCAL ORDER HISTORY
+// =====================================
+
+function getLocalOrders() {
+
+    try {
+
+        return JSON.parse(
+            localStorage.getItem(
+                "topUpOrderHistory"
+            )
+        ) || [];
+
+    } catch (error) {
+
+        console.error(
+            "History read error:",
+            error
+        );
+
+        return [];
+
+    }
+
+}
+
+
+// =====================================
+// SAVE LOCAL ORDER HISTORY
+// =====================================
+
+function saveLocalOrders(orders) {
+
+    localStorage.setItem(
+        "topUpOrderHistory",
+        JSON.stringify(orders)
+    );
+
+}
+
+
+// =====================================
+// STATUS CLASS
+// =====================================
+
+function getStatusClass(status) {
+
+    const value =
+        String(status || "Pending")
+            .toLowerCase();
+
+    if (value === "successful") {
+
+        return "successful";
+
+    }
+
+    if (value === "cancelled") {
+
+        return "cancelled";
+
+    }
+
+    return "pending";
+
+}
+
+
+// =====================================
+// RENDER ORDERS
+// =====================================
+
+function renderOrders(orders) {
+
+    const ordersBox =
+        document.getElementById(
+            "orders"
+        );
+
+    if (!ordersBox) {
+        return;
+    }
+
+    if (
+        !Array.isArray(orders) ||
+        orders.length === 0
+    ) {
+
+        ordersBox.innerHTML = `
+
+            <div class="empty">
+
+                No orders found.
+
+                <br><br>
+
+                Your completed orders will
+                appear here.
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+    ordersBox.innerHTML = "";
+
+    orders
+        .slice()
+        .sort(
+            (a, b) =>
+                new Date(b.createdAt || 0) -
+                new Date(a.createdAt || 0)
+        )
+        .forEach(order => {
+
+            const status =
+                order.status ||
+                "Pending";
+
+            const statusClass =
+                getStatusClass(status);
+
+            let itemsHTML = "";
+
+            if (
+                Array.isArray(order.items)
+            ) {
+
+                order.items.forEach(item => {
+
+                    const itemTotal =
+                        Number(item.price || 0) *
+                        Number(item.quantity || 1);
+
+                    itemsHTML += `
+
+                        <div class="item">
+
+                            <strong>
+                                ${escapeHtml(
+                                    item.package
+                                )}
+                            </strong>
+
+                            <br>
+
+                            Quantity:
+                            ${Number(
+                                item.quantity || 1
+                            )}
+
+                            <br>
+
+                            Player UID:
+                            ${escapeHtml(
+                                item.uid || "-"
+                            )}
+
+                            <br>
+
+                            Username:
+                            ${escapeHtml(
+                                item.username || "-"
+                            )}
+
+                            <br>
+
+                            Amount:
+                            Rs.${itemTotal.toFixed(2)}
+
+                        </div>
+
+                    `;
+
+                });
+
+            }
+
+            const total =
+                Number(
+                    order.total || 0
+                );
+
+            const date =
+                order.createdAt
+                    ? new Date(
+                        order.createdAt
+                    ).toLocaleString()
+                    : "Unknown";
+
+            ordersBox.innerHTML += `
+
+                <div class="order">
+
+                    <div class="order-id">
+
+                        Order ID:
+                        ${escapeHtml(
+                            order.orderId
+                        )}
+
+                    </div>
+
+                    <div class="order-info">
+
+                        <div class="items">
+
+                            <strong>
+                                Order Items
+                            </strong>
+
+                            ${itemsHTML}
+
+                        </div>
+
+                        <div style="
+                            margin-top:12px;
+                            font-size:16px;
+                            color:white;
+                            font-weight:bold;
+                        ">
+
+                            Total:
+                            Rs.${total.toFixed(2)}
+
+                        </div>
+
+                        <div>
+
+                            Payment:
+                            ${escapeHtml(
+                                order.paymentMethod ||
+                                "eSewa"
+                            )}
+
+                        </div>
+
+                        <div>
+
+                            Date:
+                            ${escapeHtml(date)}
+
+                        </div>
+
+                    </div>
+
+                    <div
+                        class="status ${statusClass}"
+                    >
+
+                        Status:
+                        ${escapeHtml(status)}
+
+                    </div>
+
+                </div>
+
+            `;
+
+        });
+
+}
+
+
+// =====================================
+// LOAD ORDERS
+// =====================================
+
+async function loadOrders() {
+
+    const ordersBox =
+        document.getElementById(
+            "orders"
+        );
+
+    if (!ordersBox) {
+        return;
+    }
+
+    ordersBox.innerHTML = `
+
+        <div class="loading">
+            Loading orders...
+        </div>
+
+    `;
+
+    // =====================================
+    // FIRST LOAD LOCAL HISTORY
+    // =====================================
+
+    let localOrders =
+        getLocalOrders();
+
+    // Show local orders immediately
+    renderOrders(localOrders);
+
+
+    // =====================================
+    // TRY TO UPDATE STATUS FROM SERVER
+    // =====================================
+
+    if (localOrders.length === 0) {
+        return;
+    }
+
+    try {
+
+        const updatedOrders = [];
+
+        for (
+            const localOrder
+            of localOrders
+        ) {
+
+            if (!localOrder.orderId) {
+                continue;
+            }
+
+            try {
+
+                const response =
+                    await fetch(
+                        API +
+                        "/api/customer-orders/" +
+                        encodeURIComponent(
+                            localOrder.orderId
+                        ),
+                        {
+                            cache: "no-store"
+                        }
+                    );
+
+                if (!response.ok) {
+                    updatedOrders.push(
+                        localOrder
+                    );
+                    continue;
+                }
+
+                const data =
+                    await response.json();
+
+                if (
+                    data.success &&
+                    data.order
+                ) {
+
+                    updatedOrders.push({
+                        ...localOrder,
+                        ...data.order
+                    });
+
+                } else {
+
+                    updatedOrders.push(
+                        localOrder
+                    );
+
+                }
+
+            } catch (error) {
+
+                updatedOrders.push(
+                    localOrder
+                );
+
+            }
+
+        }
+
+        saveLocalOrders(
+            updatedOrders
+        );
+
+        renderOrders(
+            updatedOrders
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Order refresh error:",
+            error
+        );
+
+        // Local history remains visible
+        renderOrders(
+            localOrders
+        );
+
+    }
+
+}
+
+
+// =====================================
+// CLEAR HISTORY
+// =====================================
+
+function clearOrderHistory() {
+
+    const confirmed =
+        confirm(
+            "Are you sure you want to clear your order history from this browser?"
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    localStorage.removeItem(
+        "topUpOrderHistory"
+    );
+
+    loadOrders();
+
+}
+
+
+// =====================================
+// INITIALIZE
+// =====================================
+
+loadOrders();
+
+</script>
+
+</body>
+
+</html>
